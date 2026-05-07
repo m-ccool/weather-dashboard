@@ -39,14 +39,50 @@ export default function App() {
     addToHistory(searchCity);
   }
 
-  function handleUseCurrentLocation() {
+  function getLocationErrorMessage(error) {
+    if (!error) return 'Unable to access your location.';
+
+    if (error.code === 1) {
+      return 'Location access denied. Enable location for this site in browser settings and try again.';
+    }
+
+    if (error.code === 2) {
+      return 'Location unavailable. Your device could not determine a position.';
+    }
+
+    if (error.code === 3) {
+      return 'Location request timed out. Try again or move to an area with better signal.';
+    }
+
+    return error.message || 'Unable to access your location.';
+  }
+
+  async function handleUseCurrentLocation() {
+    if (!window.isSecureContext) {
+      setLocalError('Location requires HTTPS. Open the deployed secure site URL and try again.');
+      return;
+    }
+
     if (!navigator.geolocation) {
       setLocalError('Geolocation is not supported in this browser.');
       return;
     }
 
+    if (navigator.permissions?.query) {
+      try {
+        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        if (permission.state === 'denied') {
+          setLocalError('Location is blocked in browser permissions for this site.');
+          return;
+        }
+      } catch {
+        // Some browsers do not fully support permissions query for geolocation.
+      }
+    }
+
     setLocalError('');
     setIsLocating(true);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setQuery({
@@ -57,11 +93,15 @@ export default function App() {
         });
         setIsLocating(false);
       },
-      () => {
-        setLocalError('Unable to access your location. Check browser permissions.');
+      (error) => {
+        setLocalError(getLocationErrorMessage(error));
         setIsLocating(false);
       },
-      { timeout: 10000 }
+      {
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 300000,
+      }
     );
   }
 
@@ -114,13 +154,6 @@ export default function App() {
           layout
           className="mb-8 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 shadow-2xl"
         >
-          <p className="font-sora text-white/70 text-sm mb-4">
-            Powered by{' '}
-            <span className="text-white font-medium">React 18</span> ·{' '}
-            <span className="text-white font-medium">TanStack Query</span> ·{' '}
-            <span className="text-white font-medium">Framer Motion</span> ·{' '}
-            <span className="text-white font-medium">Tailwind CSS</span>
-          </p>
           <div className="mb-4 flex flex-wrap gap-2 items-center justify-between">
             <div className="inline-flex rounded-2xl border border-white/30 overflow-hidden bg-white/10">
               <button
@@ -236,6 +269,9 @@ export default function App() {
         >
           created by b mccool @m-ccool on github 🐉
         </a>
+        <p className="mt-2 text-white/70 text-xs font-sora">
+          Stack: React 18 · TanStack Query · Framer Motion · Tailwind CSS
+        </p>
         <p className="mt-2 text-white/50 text-[11px] font-sora">build v2.1</p>
       </footer>
     </div>
