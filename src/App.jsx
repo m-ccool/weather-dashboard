@@ -231,6 +231,7 @@ export default function App() {
         >
           created by b mccool @m-ccool on github 🐉
         </a>
+        <p className="mt-2 text-white/50 text-[11px] font-sora">build v2.1</p>
       </footer>
     </div>
   );
