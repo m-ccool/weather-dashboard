@@ -1,23 +1,39 @@
 {
-  "name": "weather-dashboard-api",
-  "version": "1.0.0",
-  "description": "web api weather dashboard",
-  "main": "index.js",
+  "name": "weather-dashboard",
+  "version": "2.0.0",
+  "description": "React weather dashboard with shimmer UI, gradients, and animations",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/m-ccool/Weather-Dashboard-API.git"
+  "dependencies": {
+    "@tanstack/react-query": "^5.40.0",
+    "dayjs": "^1.11.11",
+    "framer-motion": "^11.2.10",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "eslint": "^9.9.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.9",
+    "gh-pages": "^6.1.1",
+    "globals": "^15.9.0",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.7",
+    "vite": "^5.4.1"
   },
   "author": "b mccool",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/m-ccool/Weather-Dashboard-API/issues"
-  },
-  "homepage": "https://github.com/m-ccool/Weather-Dashboard-API#readme",
-  "dependencies": {
-    "bootstrap": "^5.2.2",
-    "moment": "^2.29.4"
-  }
+  "homepage": "https://m-ccool.github.io/weather-dashboard"
 }
