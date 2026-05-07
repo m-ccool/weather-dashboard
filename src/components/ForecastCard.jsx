@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 
-export default function ForecastCard({ item, index, theme }) {
+export default function ForecastCard({ item, index, theme, unit }) {
   const iconUrl = `https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`;
+  const tempUnit = unit === 'metric' ? 'C' : 'F';
+  const speedUnit = unit === 'metric' ? 'm/s' : 'mph';
 
   return (
     <motion.div
@@ -24,14 +26,14 @@ export default function ForecastCard({ item, index, theme }) {
       </p>
       <img src={iconUrl} alt={item.weather[0].description} className="w-12 h-12" />
       <p className="text-white font-bold font-sora text-lg">
-        {Math.round(item.main.temp)}°F
+        {Math.round(item.main.temp)}°{tempUnit}
       </p>
       <p className="text-white/60 text-xs font-sora capitalize text-center leading-tight">
         {item.weather[0].description}
       </p>
       <div className="flex gap-3 text-xs text-white/60 font-sora">
         <span>💧 {item.main.humidity}%</span>
-        <span>💨 {Math.round(item.wind.speed)}mph</span>
+        <span>💨 {Math.round(item.wind.speed)} {speedUnit}</span>
       </div>
     </motion.div>
   );

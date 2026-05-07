@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
-export default function SearchBar({ onSearch, isLoading }) {
+export default function SearchBar({ onSearch, onUseCurrentLocation, isLoading, isLocating }) {
   const [value, setValue] = useState('');
 
   function handleSubmit(e) {
@@ -14,7 +14,7 @@ export default function SearchBar({ onSearch, isLoading }) {
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-col sm:flex-row">
         <input
           type="text"
           value={value}
@@ -54,6 +54,29 @@ export default function SearchBar({ onSearch, isLoading }) {
             <span>🔍</span>
           )}
           Search
+        </motion.button>
+        <motion.button
+          type="button"
+          onClick={onUseCurrentLocation}
+          disabled={isLoading || isLocating}
+          whileTap={{ scale: 0.92 }}
+          whileHover={{ scale: 1.06 }}
+          className="
+            px-4 py-3 rounded-2xl
+            bg-white/20 backdrop-blur-md
+            border border-white/30
+            text-white font-sora font-semibold text-sm
+            hover:bg-white/35 transition-all duration-300
+            disabled:opacity-40 disabled:cursor-not-allowed
+            flex items-center justify-center gap-2
+          "
+        >
+          {isLocating ? (
+            <span className="inline-block w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+          ) : (
+            <span>📍</span>
+          )}
+          Use Location
         </motion.button>
       </div>
     </form>

@@ -1,35 +1,22 @@
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 
-export default function CurrentWeather({ data, theme }) {
+export default function CurrentWeather({ data, theme, unit }) {
   const iconUrl = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
-  const uv = data.uvi;
-
-  function uvColor(val) {
-    if (val === undefined) return 'text-white/70';
-    if (val <= 2) return 'text-green-300';
-    if (val <= 5) return 'text-yellow-300';
-    if (val <= 7) return 'text-orange-400';
-    if (val <= 10) return 'text-red-400';
-    return 'text-purple-400';
-  }
-
-  function uvLabel(val) {
-    if (val === undefined) return '–';
-    if (val <= 2) return 'Low';
-    if (val <= 5) return 'Moderate';
-    if (val <= 7) return 'High';
-    if (val <= 10) return 'Very High';
-    return 'Extreme';
-  }
+  const tempUnit = unit === 'metric' ? 'C' : 'F';
+  const speedUnit = unit === 'metric' ? 'm/s' : 'mph';
+  const visibility = unit === 'metric'
+    ? `${((data.visibility || 0) / 1000).toFixed(1)} km`
+    : `${((data.visibility || 0) / 1609).toFixed(1)} mi`;
 
   const stats = [
-    { label: 'Temp', value: `${Math.round(data.main.temp)}°F`, emoji: '🌡️' },
-    { label: 'Feels like', value: `${Math.round(data.main.feels_like)}°F`, emoji: '🤔' },
+    { label: 'Temp', value: `${Math.round(data.main.temp)}°${tempUnit}`, emoji: '🌡️' },
+    { label: 'Feels like', value: `${Math.round(data.main.feels_like)}°${tempUnit}`, emoji: '🤔' },
     { label: 'Humidity', value: `${data.main.humidity}%`, emoji: '💧' },
-    { label: 'Wind', value: `${Math.round(data.wind.speed)} mph`, emoji: '💨' },
-    { label: 'UV Index', value: `${data.uvi ?? '–'} — ${uvLabel(data.uvi)}`, emoji: '☀️', colorClass: uvColor(data.uvi) },
-    { label: 'Visibility', value: `${((data.visibility || 0) / 1609).toFixed(1)} mi`, emoji: '👁️' },
+    { label: 'Wind', value: `${Math.round(data.wind.speed)} ${speedUnit}`, emoji: '💨' },
+    { label: 'Pressure', value: `${data.main.pressure} hPa`, emoji: '🧭' },
+    { label: 'Visibility', value: visibility, emoji: '👁️' },
+    { label: 'Sunset', value: dayjs.unix(data.sys.sunset).format('h:mm A'), emoji: '🌇' },
   ];
 
   return (

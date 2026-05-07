@@ -3,23 +3,29 @@ import { useQuery } from '@tanstack/react-query';
 const API_KEY = import.meta.env.VITE_OWM_API_KEY;
 const BASE = 'https://api.openweathermap.org/data/2.5';
 
-async function fetchCurrentWeather(city) {
-  const res = await fetch(
-    `${BASE}/weather?q=${encodeURIComponent(city)}&units=imperial&appid=${API_KEY}`
-  );
+async function fetchCurrentWeather(query) {
+  const units = query?.units || 'imperial';
+  const searchUrl = query?.coords
+    ? `${BASE}/weather?lat=${query.coords.lat}&lon=${query.coords.lon}&units=${units}&appid=${API_KEY}`
+    : `${BASE}/weather?q=${encodeURIComponent(query.city)}&units=${units}&appid=${API_KEY}`;
+
+  const res = await fetch(searchUrl);
   if (!res.ok) {
-    if (res.status === 404) throw new Error(`City "${city}" not found.`);
+    if (res.status === 404) throw new Error('Location not found.');
     throw new Error(`Weather fetch failed (${res.status})`);
   }
   return res.json();
 }
 
-async function fetchForecast(city) {
-  const res = await fetch(
-    `${BASE}/forecast?q=${encodeURIComponent(city)}&units=imperial&appid=${API_KEY}`
-  );
+async function fetchForecast(query) {
+  const units = query?.units || 'imperial';
+  const searchUrl = query?.coords
+    ? `${BASE}/forecast?lat=${query.coords.lat}&lon=${query.coords.lon}&units=${units}&appid=${API_KEY}`
+    : `${BASE}/forecast?q=${encodeURIComponent(query.city)}&units=${units}&appid=${API_KEY}`;
+
+  const res = await fetch(searchUrl);
   if (!res.ok) {
-    if (res.status === 404) throw new Error(`City "${city}" not found.`);
+    if (res.status === 404) throw new Error('Location not found.');
     throw new Error(`Forecast fetch failed (${res.status})`);
   }
   const data = await res.json();
@@ -38,21 +44,21 @@ async function fetchForecast(city) {
     .slice(0, 5);
 }
 
-export function useWeather(city) {
+export function useWeather(query) {
   return useQuery({
-    queryKey: ['weather', city],
-    queryFn: () => fetchCurrentWeather(city),
-    enabled: Boolean(city),
+    queryKey: ['weather', query?.city, query?.coords?.lat, query?.coords?.lon, query?.units],
+    queryFn: () => fetchCurrentWeather(query),
+    enabled: Boolean(query?.city || query?.coords),
     staleTime: 1000 * 60 * 10, // 10 min
     retry: 1,
   });
 }
 
-export function useForecast(city) {
+export function useForecast(query) {
   return useQuery({
-    queryKey: ['forecast', city],
-    queryFn: () => fetchForecast(city),
-    enabled: Boolean(city),
+    queryKey: ['forecast', query?.city, query?.coords?.lat, query?.coords?.lon, query?.units],
+    queryFn: () => fetchForecast(query),
+    enabled: Boolean(query?.city || query?.coords),
     staleTime: 1000 * 60 * 10,
     retry: 1,
   });

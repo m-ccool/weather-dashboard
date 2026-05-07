@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useWeather, useForecast } from './hooks/useWeather';
 import { useSearchHistory } from './hooks/useSearchHistory';
@@ -11,11 +11,20 @@ import IdleScene from './components/IdleScene';
 import { CurrentWeatherSkeleton, ForecastSkeleton } from './components/SkeletonCard';
 
 export default function App() {
-  const [city, setCity] = useState('');
+  const [query, setQuery] = useState(null);
+  const [unit, setUnit] = useState(() => localStorage.getItem('weather_unit') || 'imperial');
+  const [isLocating, setIsLocating] = useState(false);
+  const [localError, setLocalError] = useState('');
   const { history, addToHistory, clearHistory } = useSearchHistory();
 
-  const { data: weatherData, isLoading: weatherLoading, error: weatherError } = useWeather(city);
-  const { data: forecastData, isLoading: forecastLoading } = useForecast(city);
+  const activeQuery = query ? { ...query, units: unit } : null;
+  const {
+    data: weatherData,
+    isLoading: weatherLoading,
+    error: weatherError,
+    refetch: refetchWeather,
+  } = useWeather(activeQuery);
+  const { data: forecastData, isLoading: forecastLoading, refetch: refetchForecast } = useForecast(activeQuery);
 
   const conditionCode = weatherData?.weather?.[0]?.id;
   const daytime = weatherData ? isDaytime(weatherData.sys.sunrise, weatherData.sys.sunset) : true;
@@ -24,16 +33,70 @@ export default function App() {
     : { gradient: 'from-sky-500 via-blue-600 to-indigo-800', accent: '#e0f2fe', cardBg: 'bg-white/10', text: 'text-white' };
 
   function handleSearch(searchCity) {
-    setCity(searchCity);
+    setLocalError('');
+    setQuery({ city: searchCity });
     addToHistory(searchCity);
   }
+
+  function handleUseCurrentLocation() {
+    if (!navigator.geolocation) {
+      setLocalError('Geolocation is not supported in this browser.');
+      return;
+    }
+
+    setLocalError('');
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setQuery({
+          coords: {
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          },
+        });
+        setIsLocating(false);
+      },
+      () => {
+        setLocalError('Unable to access your location. Check browser permissions.');
+        setIsLocating(false);
+      },
+      { timeout: 10000 }
+    );
+  }
+
+  function handleRefresh() {
+    if (!query) return;
+    refetchWeather();
+    refetchForecast();
+  }
+
+  useEffect(() => {
+    localStorage.setItem('weather_unit', unit);
+  }, [unit]);
+
+  useEffect(() => {
+    if (query?.coords && weatherData?.name) {
+      addToHistory(weatherData.name);
+    }
+  }, [query, weatherData, addToHistory]);
 
   const isLoading = weatherLoading || forecastLoading;
 
   return (
     <div
-      className={`min-h-screen w-full bg-gradient-to-br ${theme.gradient} transition-all duration-1000 ease-in-out`}
+      className={`relative min-h-screen w-full overflow-hidden bg-gradient-to-br ${theme.gradient} transition-all duration-1000 ease-in-out`}
     >
+      <motion.div
+        className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-white/15 blur-3xl"
+        animate={{ x: [0, 40, 0], y: [0, 20, 0] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-cyan-200/20 blur-3xl"
+        animate={{ x: [0, -40, 0], y: [0, -30, 0] }}
+        transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-center gap-3">
@@ -44,7 +107,7 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="relative z-10 max-w-5xl mx-auto px-4 py-8">
         {/* Search panel */}
         <motion.div
           layout
@@ -57,13 +120,50 @@ export default function App() {
             <span className="text-white font-medium">Framer Motion</span> ·{' '}
             <span className="text-white font-medium">Tailwind CSS</span>
           </p>
-          <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+          <div className="mb-4 flex flex-wrap gap-2 items-center justify-between">
+            <div className="inline-flex rounded-2xl border border-white/30 overflow-hidden bg-white/10">
+              <button
+                type="button"
+                onClick={() => setUnit('imperial')}
+                className={`px-4 py-2 text-xs font-sora font-semibold transition ${
+                  unit === 'imperial' ? 'bg-white/30 text-white' : 'text-white/70 hover:bg-white/15'
+                }`}
+              >
+                Fahrenheit
+              </button>
+              <button
+                type="button"
+                onClick={() => setUnit('metric')}
+                className={`px-4 py-2 text-xs font-sora font-semibold transition ${
+                  unit === 'metric' ? 'bg-white/30 text-white' : 'text-white/70 hover:bg-white/15'
+                }`}
+              >
+                Celsius
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={!query || isLoading}
+              className="px-3 py-2 text-xs rounded-xl border border-white/30 text-white/85 hover:bg-white/15 transition disabled:opacity-40"
+            >
+              Refresh Data
+            </button>
+          </div>
+
+          <SearchBar
+            onSearch={handleSearch}
+            onUseCurrentLocation={handleUseCurrentLocation}
+            isLoading={isLoading}
+            isLocating={isLocating}
+          />
           <SearchHistory history={history} onSelect={handleSearch} onClear={clearHistory} />
         </motion.div>
 
         {/* Error */}
         <AnimatePresence>
-          {weatherError && (
+          {(weatherError || localError) && (
             <motion.div
               key="error"
               initial={{ opacity: 0, y: -10 }}
@@ -71,14 +171,14 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="mb-6 rounded-2xl bg-red-500/20 border border-red-400/40 px-5 py-4 text-red-200 font-sora text-sm"
             >
-              ⚠️ {weatherError.message}
+              ⚠️ {localError || weatherError.message}
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Content area */}
         <AnimatePresence mode="wait">
-          {!city && !isLoading && (
+          {!query && !isLoading && (
             <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <IdleScene />
             </motion.div>
@@ -102,7 +202,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <CurrentWeather data={weatherData} theme={theme} />
+              <CurrentWeather data={weatherData} theme={theme} unit={unit} />
 
               {forecastData && forecastData.length > 0 && (
                 <div className="mt-6">
@@ -111,7 +211,7 @@ export default function App() {
                   </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                     {forecastData.map((item, i) => (
-                      <ForecastCard key={item.dt} item={item} index={i} theme={theme} />
+                      <ForecastCard key={item.dt} item={item} index={i} theme={theme} unit={unit} />
                     ))}
                   </div>
                 </div>
