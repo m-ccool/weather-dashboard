@@ -9,6 +9,7 @@ import CurrentWeather from './components/CurrentWeather';
 import ForecastCard from './components/ForecastCard';
 import IdleScene from './components/IdleScene';
 import { CurrentWeatherSkeleton, ForecastSkeleton } from './components/SkeletonCard';
+import ModuleErrorBoundary from './components/ModuleErrorBoundary';
 
 export default function App() {
   const [query, setQuery] = useState(null);
@@ -196,13 +197,15 @@ export default function App() {
 
           {!isLoading && weatherData && (
             <motion.div
-              key={city}
+              key={query?.city || `${query?.coords?.lat || 'lat'}-${query?.coords?.lon || 'lon'}-${unit}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <CurrentWeather data={weatherData} theme={theme} unit={unit} />
+              <ModuleErrorBoundary moduleName="Current Weather">
+                <CurrentWeather data={weatherData} theme={theme} unit={unit} />
+              </ModuleErrorBoundary>
 
               {forecastData && forecastData.length > 0 && (
                 <div className="mt-6">
@@ -211,7 +214,9 @@ export default function App() {
                   </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                     {forecastData.map((item, i) => (
-                      <ForecastCard key={item.dt} item={item} index={i} theme={theme} unit={unit} />
+                      <ModuleErrorBoundary key={item.dt} moduleName="Forecast Card">
+                        <ForecastCard item={item} index={i} theme={theme} unit={unit} />
+                      </ModuleErrorBoundary>
                     ))}
                   </div>
                 </div>
