@@ -57,7 +57,7 @@ export default function App() {
     return error.message || 'Unable to access your location.';
   }
 
-  async function handleUseCurrentLocation() {
+  function handleUseCurrentLocation() {
     if (!window.isSecureContext) {
       setLocalError('Location requires HTTPS. Open the deployed secure site URL and try again.');
       return;
@@ -66,18 +66,6 @@ export default function App() {
     if (!navigator.geolocation) {
       setLocalError('Geolocation is not supported in this browser.');
       return;
-    }
-
-    if (navigator.permissions?.query) {
-      try {
-        const permission = await navigator.permissions.query({ name: 'geolocation' });
-        if (permission.state === 'denied') {
-          setLocalError('Location is blocked in browser permissions for this site.');
-          return;
-        }
-      } catch {
-        // Some browsers do not fully support permissions query for geolocation.
-      }
     }
 
     setLocalError('');
